@@ -1,3 +1,5 @@
+#PROFILE=YES
+PROFILE=APPLY
 
 SRC = src/
 
@@ -207,10 +209,15 @@ BINDIR=$(TOOLCHAIN)/bin/mipsel-linux-
 CC = $(BINDIR)gcc
 CXX = $(BINDIR)g++
 LD = $(BINDIR)g++
+STRIP = $(BINDIR)strip
 
 INCLUDEDIR=$(TOOLCHAIN)/include
 
 OPT_FLAGS = -Ofast -fdata-sections -ffunction-sections -mno-fp-exceptions -mno-check-zero-division -mframe-header-opt -fno-common -flto -fwhole-program -fsingle-precision-constant -mips32 -fno-PIC -mno-abicalls
+
+OPT_FLAGS = -Ofast -mips32 \
+			-ffast-math -fomit-frame-pointer -fno-strength-reduce
+
 
 CFLAGS = -I$(INCLUDEDIR) -I$(SRC)
 CXXFLAGS = -I$(INCLUDEDIR)
@@ -227,12 +234,13 @@ CFLAGS += -DDINGUX -DLSB_FIRST -DPSS_STYLE=1 \
 	  -I$(INCLUDEDIR)/SDL -D_GNU_SOURCE=1 -D_REENTRANT
 CXXFLAGS += $(CFLAGS) -fno-rtti -fno-math-errno -fno-threadsafe-statics
 
-LDFLAGS  = -lc -lstdc++ -lgcc -lm -lSDL -lasound -lz -lm -no-pie -Wl,--as-needed -Wl,--gc-sections -flto -s
+LDFLAGS  = -lc -lstdc++ -lgcc -lm -lSDL -lasound -lz -lm -no-pie -Wl,--as-needed -Wl,--gc-sections
+    #-flto -s
 
-PROFILE=NO
+
 ifeq ($(PROFILE), YES)
 CFLAGS 		+= -fprofile-generate=/media/data/local/home/profile
-LDFLAGS  	+= -lgcov -fprofile-generate=/media/data/local/home/profilee
+LDFLAGS  	+= -lgcov -fprofile-generate=/media/data/local/home/profile
 else ifeq ($(PROFILE), APPLY)
 CFLAGS		+= -fprofile-use -fbranch-probabilities
 endif
@@ -245,7 +253,8 @@ $(TARGET): $(OBJS)
 	@mkdir -p bin/
 	@cp src/drivers/dingux-sdl/gui/*.bmp bin/
 	@echo Linking $@...
-	#$(LD) -lgcov $(OBJS) $(LDFLAGS) -o bin/$@
+	$(LD) -lgcov $(OBJS) $(LDFLAGS) -o bin/$@
+	$(STRIP) bin/$@
     
 %.o: %.cpp
 	@echo Compiling_ $<...
